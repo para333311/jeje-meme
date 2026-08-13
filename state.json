@@ -1,0 +1,324 @@
+{
+  "last_daily": "2026-08-13",
+  "regions": {
+    "1188": {
+      "asks": 37,
+      "auctions": 0,
+      "min_price": "3.5억",
+      "name": "모아타운 자양1동 799"
+    },
+    "1881": {
+      "asks": 6,
+      "auctions": 0,
+      "min_price": "9억",
+      "name": "모아타운 자양동 772-1"
+    },
+    "2453": {
+      "asks": 5,
+      "auctions": 0,
+      "min_price": "8억",
+      "name": "신통기획 금호23"
+    },
+    "3268": {
+      "asks": 24,
+      "auctions": 0,
+      "min_price": "5.8억",
+      "name": "신통기획 (가)자양4동B(자양4동 858)"
+    },
+    "3696": {
+      "asks": 4,
+      "auctions": 0,
+      "min_price": "12.5억",
+      "name": "신통기획 아현동 331-29"
+    },
+    "4138": {
+      "asks": 49,
+      "auctions": 0,
+      "min_price": "3.7억",
+      "name": "신통기획 (가)상도25"
+    },
+    "4140": {
+      "asks": 16,
+      "auctions": 0,
+      "min_price": "5.9억",
+      "name": "신통기획 (가)도화동 196-11"
+    },
+    "4141": {
+      "asks": 32,
+      "auctions": 0,
+      "min_price": "6.5억",
+      "name": "신통기획 구의2동A(구의동 46)"
+    },
+    "4151": {
+      "asks": 6,
+      "auctions": 0,
+      "min_price": "3.1억",
+      "name": "신통기획 (가)제기동 1145-8"
+    },
+    "4156": {
+      "asks": 11,
+      "auctions": 0,
+      "min_price": "6.2억",
+      "name": "신통기획 (가)대흥5"
+    },
+    "4162": {
+      "asks": 0,
+      "auctions": 0,
+      "min_price": null,
+      "name": "신통기획 (가)노량진12"
+    },
+    "4163": {
+      "asks": 9,
+      "auctions": 0,
+      "min_price": "8억",
+      "name": "신통기획 (가)동후암2"
+    },
+    "4164": {
+      "asks": 11,
+      "auctions": 0,
+      "min_price": "4.7억",
+      "name": "신통기획 (가)대청마을1"
+    },
+    "4165": {
+      "asks": 5,
+      "auctions": 0,
+      "min_price": "5억",
+      "name": "신통기획 (가)남산2"
+    },
+    "4167": {
+      "asks": 15,
+      "auctions": 0,
+      "min_price": "8.5억",
+      "name": "신통기획 (가)옥수동 460-9"
+    },
+    "4170": {
+      "asks": 10,
+      "auctions": 0,
+      "min_price": "6.3억",
+      "name": "신통기획 (가)남산3"
+    },
+    "4175": {
+      "asks": 19,
+      "auctions": 0,
+      "min_price": "4억",
+      "name": "신통기획 (가)사당18"
+    },
+    "4178": {
+      "asks": 9,
+      "auctions": 0,
+      "min_price": "12.8억",
+      "name": "신통기획 (가)후암동 195-1"
+    },
+    "4180": {
+      "asks": 14,
+      "auctions": 0,
+      "min_price": "8억",
+      "name": "신통기획 (가)원효로3가 114-1"
+    },
+    "4181": {
+      "asks": 5,
+      "auctions": 0,
+      "min_price": "6.8억",
+      "name": "신통기획 (가)서빙고동 36"
+    },
+    "4182": {
+      "asks": 7,
+      "auctions": 0,
+      "min_price": "23.7억",
+      "name": "신통기획 (가)한강로3가65-100"
+    },
+    "4183": {
+      "asks": 11,
+      "auctions": 0,
+      "min_price": "6억",
+      "name": "신통기획 (가)용산4"
+    },
+    "4247": {
+      "asks": 1,
+      "auctions": 0,
+      "min_price": "50억",
+      "name": "장기전세 갈월동 52-6"
+    },
+    "4286": {
+      "asks": 19,
+      "auctions": 0,
+      "min_price": "6.3억",
+      "name": "신통기획 당인동 15-22"
+    },
+    "4301": {
+      "asks": 3,
+      "auctions": 0,
+      "min_price": "23억",
+      "name": "신통기획 (가)후암동110-2"
+    },
+    "4308": {
+      "asks": 13,
+      "auctions": 1,
+      "min_price": "6.8억",
+      "name": "모아타운 (가)방배1동"
+    },
+    "4559": {
+      "asks": 16,
+      "auctions": 0,
+      "min_price": "9.5억",
+      "name": "신통기획 흑석12"
+    },
+    "4566": {
+      "asks": 5,
+      "auctions": 1,
+      "min_price": "5.8억",
+      "name": "신통기획 (가)상도24"
+    },
+    "4590": {
+      "asks": 5,
+      "auctions": 0,
+      "min_price": "5억",
+      "name": "신통기획 (가)회현동1가 100-12"
+    },
+    "4591": {
+      "asks": 18,
+      "auctions": 0,
+      "min_price": "12.5억",
+      "name": "신통기획 (가)송정동73-533"
+    },
+    "4592": {
+      "asks": 6,
+      "auctions": 0,
+      "min_price": "5억",
+      "name": "신통기획 구의동 32"
+    },
+    "4609": {
+      "asks": 23,
+      "auctions": 0,
+      "min_price": "16억",
+      "name": "모아타운 (가)서초3동2"
+    },
+    "4611": {
+      "asks": 23,
+      "auctions": 0,
+      "min_price": "5.5억",
+      "name": "신통기획 (가)노고산동 12-17"
+    },
+    "4631": {
+      "asks": 42,
+      "auctions": 0,
+      "min_price": "3.9억",
+      "name": "신통기획 (가)고덕1"
+    },
+    "4634": {
+      "asks": 32,
+      "auctions": 0,
+      "min_price": "2.8억",
+      "name": "민도복 (가)사당동 419"
+    },
+    "4635": {
+      "asks": 4,
+      "auctions": 0,
+      "min_price": "7억",
+      "name": "신통기획 (가)금호동3가 1198"
+    },
+    "4636": {
+      "asks": 7,
+      "auctions": 1,
+      "min_price": "9.5억",
+      "name": "신통기획 (가)개포4동1"
+    },
+    "4639": {
+      "asks": 14,
+      "auctions": 0,
+      "min_price": "11.5억",
+      "name": "모아타운 (가)방배16"
+    },
+    "4641": {
+      "asks": 12,
+      "auctions": 0,
+      "min_price": "6.3억",
+      "name": "모아타운 (가)자양동 629"
+    },
+    "4646": {
+      "asks": 23,
+      "auctions": 0,
+      "min_price": "8.4억",
+      "name": "신통기획 (가)이태원동 252-1"
+    },
+    "4648": {
+      "asks": 2,
+      "auctions": 0,
+      "min_price": "7.7억",
+      "name": "신통기획 (가)성내동 433"
+    },
+    "4877": {
+      "asks": 0,
+      "auctions": 0,
+      "min_price": null,
+      "name": "신통기획 (가)구의1동 221-1"
+    },
+    "4913": {
+      "asks": 12,
+      "auctions": 0,
+      "min_price": "22억",
+      "name": "민도복 (가)삼성동 30-1"
+    },
+    "4916": {
+      "asks": 5,
+      "auctions": 0,
+      "min_price": "3.8억",
+      "name": "민도복 (가)석촌고분1"
+    },
+    "4917": {
+      "asks": 4,
+      "auctions": 0,
+      "min_price": "6억",
+      "name": "민도복 (가)석촌고분2"
+    },
+    "4983": {
+      "asks": 12,
+      "auctions": 1,
+      "min_price": "4억",
+      "name": "모아타운 사당동 300"
+    },
+    "5295": {
+      "asks": 22,
+      "auctions": 0,
+      "min_price": "7.9억",
+      "name": "민도복 (가)서초동 1546"
+    },
+    "5306": {
+      "asks": 23,
+      "auctions": 0,
+      "min_price": "2.1억",
+      "name": "신통기획 (가)상일동 300"
+    },
+    "5327": {
+      "asks": 6,
+      "auctions": 1,
+      "min_price": "3.9억",
+      "name": "신통기획 (가)사당23"
+    },
+    "5328": {
+      "asks": 5,
+      "auctions": 0,
+      "min_price": "7.5억",
+      "name": "신통기획 (가)자양동 614"
+    },
+    "5343": {
+      "asks": 9,
+      "auctions": 0,
+      "min_price": "3.1억",
+      "name": "신통기획 (가)사근동 212-1"
+    },
+    "5346": {
+      "asks": 8,
+      "auctions": 0,
+      "min_price": "6.2억",
+      "name": "신통기획 (가)능동 367-2(A12)"
+    },
+    "5349": {
+      "asks": 27,
+      "auctions": 1,
+      "min_price": "3억",
+      "name": "신통기획 (가)오금동 70-1"
+    }
+  },
+  "updated_at": "2026-08-13 11:36:44 KST"
+}
