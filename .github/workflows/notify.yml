@@ -1,0 +1,63 @@
+name: 재개발닷컴 매물 알림
+
+on:
+  schedule:
+    # UTC 기준. KST 08:00~22:30, 30분 간격
+    - cron: '0,30 23 * * *'
+    - cron: '0,30 0-13 * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: '변동 여부와 무관하게 일일 현황 발송'
+        type: boolean
+        required: false
+        default: true
+
+concurrency:
+  group: jaegebal-notify
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: 알림 실행
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          PYTHONUNBUFFERED: '1'
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.force }}" = "true" ]; then
+            python scripts/notify.py --force
+          else
+            python scripts/notify.py
+          fi
+
+      - name: state.json 커밋
+        if: always()
+        continue-on-error: true
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [ -z "$(git status --porcelain state.json)" ]; then
+            echo "변경 없음"
+            exit 0
+          fi
+          git add state.json
+          git commit -m "chore: state.json 갱신"
+          for i in 1 2 3; do
+            if git push; then
+              exit 0
+            fi
+            git pull --rebase --autostash
+          done
+          exit 1
