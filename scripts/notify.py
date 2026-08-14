@@ -156,16 +156,27 @@ def send(text):
 
 
 def split_chunks(text):
-    """줄 단위로 MAX_LEN 이하 조각으로 나눈다."""
-    lines = text.split("\n")
+    """MAX_LEN 이하로 나눈다. 빈 줄로 구분된 구역 블록은 쪼개지 않는다."""
     chunks, cur = [], ""
-    for line in lines:
-        cand = line if not cur else cur + "\n" + line
-        if len(cand) > MAX_LEN and cur:
-            chunks.append(cur)
-            cur = line
-        else:
+    for block in text.split("\n\n"):
+        cand = block if not cur else cur + "\n\n" + block
+        if len(cand) <= MAX_LEN:
             cur = cand
+            continue
+        if cur:
+            chunks.append(cur)
+            cur = ""
+        if len(block) <= MAX_LEN:
+            cur = block
+            continue
+        # 블록 하나가 한도를 넘으면 줄 단위로 다시 나눈다
+        for line in block.split("\n"):
+            cand = line if not cur else cur + "\n" + line
+            if len(cand) > MAX_LEN and cur:
+                chunks.append(cur)
+                cur = line
+            else:
+                cur = cand
     if cur:
         chunks.append(cur)
     return chunks
@@ -173,8 +184,37 @@ def split_chunks(text):
 
 # ---------------------------------------------------------------- 메시지 작성
 
+HIGHLIGHT_MAX = 5.0  # 억 단위. 이하 최저가는 눈에 띄게 강조한다
+RE_PRICE = re.compile(r'^\s*([\d.,]+)\s*(억|만)?\s*$')
+
+
 def esc(s):
     return html.escape(s or "")
+
+
+def price_value(s):
+    """'3.2억' → 3.2, '9,000만' → 0.9 처럼 억 단위 숫자로 바꾼다."""
+    if not s:
+        return None
+    m = RE_PRICE.match(s)
+    if not m:
+        return None
+    try:
+        num = float(m.group(1).replace(",", ""))
+    except ValueError:
+        return None
+    return num / 10000.0 if m.group(2) == "만" else num
+
+
+def price_html(s):
+    """5억 이하면 숫자 부분만 <code>로 감싸 다른 색으로 보이게 한다."""
+    if not s:
+        return "-"
+    v = price_value(s)
+    m = RE_PRICE.match(s)
+    if v is None or m is None or v > HIGHLIGHT_MAX:
+        return esc(s)
+    return "<code>%s</code>%s" % (esc(m.group(1)), esc(m.group(2) or ""))
 
 
 def price_text(v):
@@ -190,15 +230,15 @@ def change_block(cur, prev):
         diff = cur["asks"] - (prev.get("asks") or 0)
         lines.append("매물 %d개 → %d개 (%+d)" % (prev.get("asks") or 0, cur["asks"], diff))
     if prev.get("min_price") != cur["min_price"]:
-        lines.append("최저가 %s → %s" % (price_text(prev.get("min_price")),
-                                          price_text(cur["min_price"])))
+        lines.append("최저가 %s → %s" % (esc(price_text(prev.get("min_price"))),
+                                          price_html(cur["min_price"])))
     if prev.get("auctions") != cur["auctions"]:
         lines.append("경매 %d건 → %d건" % (prev.get("auctions") or 0, cur["auctions"]))
 
     now = "현재: 매물 %d개" % cur["asks"]
     if cur["min_price"]:
-        now += " (최저가 %s)" % esc(cur["min_price"])
-    now += " · 경매 %d건" % cur["auctions"]
+        now += "(%s)" % price_html(cur["min_price"])
+    now += " 경매 %d건" % cur["auctions"]
     lines.append(now)
 
     links = ['<a href="%s/develops/%d">구역 보기</a>' % (BASE, hid),
@@ -211,22 +251,25 @@ def change_block(cur, prev):
 
 
 def daily_message(results, today):
-    """일일 현황 메시지. 매물 1개 이상인 구역만 나열한다."""
-    lines = ["📋 관심구역 현황 (%s)" % today]
+    """일일 현황 메시지. 구역명 줄과 수치 줄을 나눠 왼쪽 끝을 맞춘다."""
+    blocks = []
     empty = 0
     for r in results:
         if r["asks"] <= 0:
             empty += 1
             continue
-        line = '• <a href="%s/develops/%d">%s</a> 매물 %d개' % (
-            BASE, r["id"], esc(r["name"]), r["asks"])
+        head = '<b><a href="%s/develops/%d">%s</a></b>' % (
+            BASE, r["id"], esc(r["name"]))
+        body = "매물 %d개" % r["asks"]
         if r["min_price"]:
-            line += " (%s)" % esc(r["min_price"])
+            body += "(%s)" % price_html(r["min_price"])
         if r["auctions"] > 0:
-            line += " 경매 %d건" % r["auctions"]
-        lines.append(line)
-    lines.append("매물 없는 구역 %d개는 생략" % empty)
-    return "\n".join(lines)
+            body += " 경매 %d건" % r["auctions"]
+        blocks.append(head + "\n" + body)
+
+    header = "📋 <b>관심구역 현황</b> (%s)" % today
+    footer = "매물 없는 구역 %d개는 생략" % empty
+    return "\n\n".join([header] + blocks + [footer])
 
 
 # ---------------------------------------------------------------- 상태 파일
