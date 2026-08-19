@@ -206,15 +206,26 @@ def price_value(s):
     return num / 10000.0 if m.group(2) == "만" else num
 
 
+def is_low_price(s):
+    """알림 강조 대상(최저가 5억 이하)인지 판별한다."""
+    v = price_value(s)
+    return v is not None and v <= HIGHLIGHT_MAX
+
+
 def price_html(s):
-    """5억 이하면 숫자 부분만 <code>로 감싸 다른 색으로 보이게 한다."""
+    """5억 이하면 이모지+코드 포맷으로 더 튀게 강조한다."""
     if not s:
         return "-"
     v = price_value(s)
     m = RE_PRICE.match(s)
     if v is None or m is None or v > HIGHLIGHT_MAX:
         return esc(s)
-    return "<code>%s</code>%s" % (esc(m.group(1)), esc(m.group(2) or ""))
+    return "🟥<code>%s</code>%s" % (esc(m.group(1)), esc(m.group(2) or ""))
+
+
+def title_icon(min_price):
+    """저가 매물은 벨 대신 경고 아이콘으로 제목에서 먼저 눈에 띄게 한다."""
+    return "🚨" if is_low_price(min_price) else "🔔"
 
 
 def price_text(v):
@@ -224,7 +235,7 @@ def price_text(v):
 def change_block(cur, prev):
     """변동 알림 1개 구역 블록."""
     hid = cur["id"]
-    lines = ["🔔 <b>%s</b>" % esc(cur["name"])]
+    lines = ["%s <b>%s</b>" % (title_icon(cur.get("min_price")), esc(cur["name"]))]
 
     if prev.get("asks") != cur["asks"]:
         diff = cur["asks"] - (prev.get("asks") or 0)
@@ -258,8 +269,8 @@ def daily_message(results, today):
         if r["asks"] <= 0:
             empty += 1
             continue
-        head = '<b><a href="%s/develops/%d">%s</a></b>' % (
-            BASE, r["id"], esc(r["name"]))
+        head = '%s <b><a href="%s/develops/%d">%s</a></b>' % (
+            title_icon(r.get("min_price")), BASE, r["id"], esc(r["name"]))
         body = "매물 %d개" % r["asks"]
         if r["min_price"]:
             body += "(%s)" % price_html(r["min_price"])
