@@ -2,9 +2,8 @@ name: 재개발닷컴 매물 알림
 
 on:
   schedule:
-    # UTC 기준. KST 08:00~22:30, 30분 간격
-    - cron: '0,30 23 * * *'
-    - cron: '0,30 0-13 * * *'
+    # UTC 기준 3시간마다. 9시간 오프셋이 3의 배수라 KST로도 3시간 간격(09,12,15,18,21,00,03,06시) 유지
+    - cron: '0 */3 * * *'
   workflow_dispatch:
     inputs:
       force:
