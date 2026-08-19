@@ -213,14 +213,14 @@ def is_low_price(s):
 
 
 def price_html(s):
-    """5억 이하면 이모지+코드 포맷으로 더 튀게 강조한다."""
+    """5억 이하면 숫자 부분만 <code>로 감싸 다른 색으로 보이게 한다."""
     if not s:
         return "-"
     v = price_value(s)
     m = RE_PRICE.match(s)
     if v is None or m is None or v > HIGHLIGHT_MAX:
         return esc(s)
-    return "🟥<code>%s</code>%s" % (esc(m.group(1)), esc(m.group(2) or ""))
+    return "<code>%s</code>%s" % (esc(m.group(1)), esc(m.group(2) or ""))
 
 
 def title_icon(min_price):
