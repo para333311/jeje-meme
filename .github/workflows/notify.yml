@@ -4,13 +4,8 @@ on:
   schedule:
     # UTC 0,3,6,9,12시 = KST 09,12,15,18,21시. 밤시간(00,03,06시) 제외
     - cron: '0 0,3,6,9,12 * * *'
+  # 이제 매 실행이 전 구역 현황을 보내므로 force 입력이 필요 없다.
   workflow_dispatch:
-    inputs:
-      force:
-        description: '변동 여부와 무관하게 일일 현황 발송'
-        type: boolean
-        required: false
-        default: true
 
 concurrency:
   group: jaegebal-notify
@@ -34,12 +29,7 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           PYTHONUNBUFFERED: '1'
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.force }}" = "true" ]; then
-            python scripts/notify.py --force
-          else
-            python scripts/notify.py
-          fi
+        run: python scripts/notify.py
 
       - name: state.json 커밋
         if: always()

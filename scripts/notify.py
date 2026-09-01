@@ -69,6 +69,54 @@ RE_STAGE = re.compile(r'develop-meta-item--stage[^>]*>\s*([^<]*)')
 RE_STAGE_DATE = re.compile(
     r'develop-meta-item--stage[^>]*>[^<]*<span[^>]*develop-meta-suffix[^>]*>\s*\(([^)]*)\)')
 
+# 실거래 표. 구역 페이지에 이미 서버렌더링돼 있어 추가 요청이 필요 없다.
+# 행 하나가 <tr class="hover-item"> 이고 셀 다섯 개다 (2026-09-01 실측):
+#   [0] 26.08.22
+#   [1] 다세대 2001 년
+#   [2] 오금동 65-17 예일빌리지(B동) 4층 전용 12.18 평
+#   [3] 3.3 억 공주가 1.5 억          ← '공주가'(공시가격) 앞이 실거래가
+#   [4] 6,357 만/평 5.19 평           ← 마지막 평수가 대지지분
+RE_TX_ROW = re.compile(r'<tr[^>]*class="[^"]*hover-item[^"]*"[^>]*>([\s\S]*?)</tr>')
+RE_TX_CELL = re.compile(r'<td[^>]*>([\s\S]*?)</td>')
+RE_TX_DATE = re.compile(r'^\d\d\.\d\d\.\d\d$')
+RE_TX_AREA = re.compile(r'전용\s*([\d.]+)\s*평')
+RE_TX_PYEONG = re.compile(r'([\d.]+)\s*평')
+
+
+def cell_text(fragment):
+    return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", fragment)).strip()
+
+
+def parse_transactions(page):
+    """구역 페이지의 실거래 행들을 뽑는다.
+
+    실거래는 매물 알림에 얹는 덤이므로, 표 구조가 바뀌어도 여기서 예외를
+    내지 않고 빈 리스트를 돌려준다 — 이것 때문에 매물 알림까지 죽으면 안 된다.
+    """
+    txs = []
+    for row in RE_TX_ROW.findall(page):
+        cells = [cell_text(c) for c in RE_TX_CELL.findall(row)]
+        if len(cells) < 4 or not RE_TX_DATE.match(cells[0]):
+            continue
+        kind = re.sub(r"\s*\d{4}\s*년\s*", "", cells[1]).strip()
+        where = re.sub(r"\s*전용\s*[\d.]+\s*평\s*$", "", cells[2]).strip()
+        m = RE_TX_AREA.search(cells[2])
+        area = m.group(1) if m else None
+        # 가격: '공주가'(공시가격) 앞쪽 토큰이 실거래가
+        price = price_value(cells[3].split("공주가")[0].strip().replace(" ", ""))
+        land = None
+        if len(cells) > 4:
+            found = RE_TX_PYEONG.findall(cells[4])
+            land = found[-1] if found else None
+        txs.append({"date": cells[0], "kind": kind, "where": where,
+                    "area": area, "land": land, "price": price})
+    return txs
+
+
+def tx_key(tx):
+    """같은 날 같은 물건 같은 값이면 같은 거래로 본다."""
+    return "%s|%s|%s" % (tx["date"], tx["where"], tx["price"])
+
 
 def parse(hid, page):
     """구역 HTML에서 이름/매물수/경매건수/최저가/단계/단계일자를 뽑는다."""
@@ -120,6 +168,7 @@ def parse(hid, page):
         "min_price": min_price,
         "stage": stage,
         "stage_date": stage_date,
+        "txs": parse_transactions(page),
     }
 
 
@@ -184,7 +233,8 @@ def split_chunks(text):
 
 # ---------------------------------------------------------------- 메시지 작성
 
-HIGHLIGHT_MAX = 5.0  # 억 단위. 이하 최저가는 눈에 띄게 강조한다
+HIGHLIGHT_MAX = 5.0  # 억 단위. 최저가 강조 기준이자 실거래 알림 상한
+TX_KEEP = 40         # 구역별로 기억할 실거래 키 수 (페이지엔 5건뿐이라 넉넉)
 RE_PRICE = re.compile(r'^\s*([\d.,]+)\s*(억|만)?\s*$')
 
 
@@ -232,55 +282,87 @@ def price_text(v):
     return v if v else "-"
 
 
-def change_block(cur, prev):
-    """변동 알림 1개 구역 블록."""
+def tx_line(tx):
+    """실거래 한 줄. 유형(다세대)은 적지 않는다 — 5억 이하는 사실상 전부
+    다세대라 매 줄에 같은 말이 반복될 뿐이다. 다른 유형일 때만 적는다."""
+    parts = []
+    if tx["kind"] and tx["kind"] != "다세대":
+        parts.append(esc(tx["kind"]))
+    parts.append("<b>%s억</b>" % fmt_num(tx["price"]))
+    if tx["land"]:
+        parts.append("대지 %s평" % esc(tx["land"]))
+    if tx["where"]:
+        parts.append(esc(tx["where"]))
+    parts.append(esc(tx["date"]))
+    return "💰 " + " · ".join(parts)
+
+
+def fmt_num(v):
+    """3.30 -> 3.3, 3.00 -> 3 처럼 불필요한 끝자리 0을 없앤다."""
+    return ("%.2f" % v).rstrip("0").rstrip(".")
+
+
+def zone_block(cur, prev, new_txs):
+    """구역 1개 블록. 변동이 있으면 변동 줄을 얹고, 없어도 현재 상태는 항상 낸다."""
     hid = cur["id"]
-    lines = ["%s <b>%s</b>" % (title_icon(cur.get("min_price")), esc(cur["name"]))]
+    lines = ['%s <b><a href="%s/develops/%d">%s</a></b>'
+             % (title_icon(cur.get("min_price")), BASE, hid, esc(cur["name"]))]
 
-    if prev.get("asks") != cur["asks"]:
-        diff = cur["asks"] - (prev.get("asks") or 0)
-        lines.append("매물 %d개 → %d개 (%+d)" % (prev.get("asks") or 0, cur["asks"], diff))
-    if prev.get("min_price") != cur["min_price"]:
-        lines.append("최저가 %s → %s" % (esc(price_text(prev.get("min_price"))),
-                                          price_html(cur["min_price"])))
-    if prev.get("auctions") != cur["auctions"]:
-        lines.append("경매 %d건 → %d건" % (prev.get("auctions") or 0, cur["auctions"]))
+    if prev:
+        if prev.get("asks") != cur["asks"]:
+            diff = cur["asks"] - (prev.get("asks") or 0)
+            lines.append("매물 %d개 → %d개 (%+d)"
+                         % (prev.get("asks") or 0, cur["asks"], diff))
+        if prev.get("min_price") != cur["min_price"]:
+            lines.append("최저가 %s → %s" % (esc(price_text(prev.get("min_price"))),
+                                              price_html(cur["min_price"])))
+        if prev.get("auctions") != cur["auctions"]:
+            lines.append("경매 %d건 → %d건" % (prev.get("auctions") or 0, cur["auctions"]))
 
-    now = "현재: 매물 %d개" % cur["asks"]
+    now = "매물 %d개" % cur["asks"]
     if cur["min_price"]:
         now += "(%s)" % price_html(cur["min_price"])
-    now += " 경매 %d건" % cur["auctions"]
+    if cur["auctions"] > 0:
+        now += " 경매 %d건" % cur["auctions"]
     lines.append(now)
 
-    links = ['<a href="%s/develops/%d">구역 보기</a>' % (BASE, hid),
-             '<a href="%s/develops/%d/asks">매물 %d개 보기</a>' % (BASE, hid, cur["asks"])]
+    for tx in new_txs:
+        lines.append(tx_line(tx))
+
+    links = []
+    if cur["asks"] > 0:
+        links.append('<a href="%s/develops/%d/asks">매물 %d개 보기</a>'
+                     % (BASE, hid, cur["asks"]))
     if cur["auctions"] > 0:
         links.append('<a href="%s/develops/%d/auctions">경매 %d건 보기</a>'
                      % (BASE, hid, cur["auctions"]))
-    lines.append(" · ".join(links))
+    if links:
+        lines.append(" · ".join(links))
     return "\n".join(lines)
 
 
-def daily_message(results, today):
-    """일일 현황 메시지. 구역명 줄과 수치 줄을 나눠 왼쪽 끝을 맞춘다."""
+def status_message(results, prev_regions, new_tx_map, when):
+    """매 실행마다 보내는 전 구역 현황.
+
+    예전에는 변동 있는 구역만 보내고 전체 현황은 하루 한 번(09시)이었다.
+    변동이 없어도 그 구역이 지금 어떤 상태인지가 알고 싶은 정보라 매번
+    전부 낸다. 매물이 0개인 구역은 여전히 생략하되, 그 구역에 새 실거래가
+    잡혔으면 그건 볼 값어치가 있으므로 포함한다.
+    """
     blocks = []
     empty = 0
     for r in results:
-        if r["asks"] <= 0:
+        new_txs = new_tx_map.get(r["id"], [])
+        if r["asks"] <= 0 and not new_txs:
             empty += 1
             continue
-        head = '%s <b><a href="%s/develops/%d">%s</a></b>' % (
-            title_icon(r.get("min_price")), BASE, r["id"], esc(r["name"]))
-        body = "매물 %d개" % r["asks"]
-        if r["min_price"]:
-            body += "(%s)" % price_html(r["min_price"])
-        if r["auctions"] > 0:
-            body += " 경매 %d건" % r["auctions"]
-        blocks.append(head + "\n" + body)
+        blocks.append(zone_block(r, prev_regions.get(str(r["id"])), new_txs))
 
-    header = "📋 <b>관심구역 현황</b> (%s)" % today
-    footer = "매물 없는 구역 %d개는 생략" % empty
-    return "\n\n".join([header] + blocks + [footer])
+    header = "📋 <b>관심구역 현황</b> (%s)" % when
+    parts = [header] + blocks
+    if empty:
+        parts.append("매물·새 실거래 없는 구역 %d개는 생략" % empty)
+    return "\n\n".join(parts)
 
 
 # ---------------------------------------------------------------- 상태 파일
@@ -305,18 +387,20 @@ def save_state(state):
 # ---------------------------------------------------------------- 메인
 
 def main():
-    force = "--force" in sys.argv[1:]
-
     with open(REGIONS_PATH, "r", encoding="utf-8") as f:
         regions = json.load(f)
 
-    state, had_state = load_state()
+    state, _had_state = load_state()
     prev_regions = state.get("regions", {})
+    # prev_regions 는 아래 루프에서 그 자리에서 갱신된다. 메시지에 "18개 → 19개"
+    # 를 쓰려면 갱신 전 값이 필요하므로 여기서 한 벌 떠 둔다.
+    before = dict((k, dict(v)) for k, v in prev_regions.items())
 
     now = datetime.now(KST)
     today = now.strftime("%Y-%m-%d")
 
-    results, failures, changed = [], [], []
+    results, failures = [], []
+    new_tx_map = {}
 
     for idx, region in enumerate(regions):
         hid = int(region["id"])
@@ -335,30 +419,36 @@ def main():
             cur["auctions"], cur["stage"] or "-", cur["stage_date"] or ""))
 
         prev = prev_regions.get(str(hid))
-        if prev and (prev.get("asks") != cur["asks"]
-                     or prev.get("auctions") != cur["auctions"]
-                     or prev.get("min_price") != cur["min_price"]):
-            changed.append((cur, prev))
+
+        # 실거래: 5억 이하이면서 아직 안 알린 것만 고른다. 5억 초과는 조용히
+        # 기록만 해 다음 실행에서 '새 거래'로 다시 잡히지 않게 한다.
+        seen_txs = (prev or {}).get("txs")
+        keys = [tx_key(t) for t in cur["txs"]]
+        if seen_txs is None:
+            # 이 구역의 실거래를 처음 보는 실행: 알림 없이 기준선만 잡는다.
+            # 안 그러면 53개 구역 × 5건이 한꺼번에 쏟아진다.
+            new_txs = []
+        else:
+            known = set(seen_txs)
+            new_txs = [t for t in cur["txs"]
+                       if tx_key(t) not in known
+                       and t["price"] is not None and t["price"] <= HIGHLIGHT_MAX]
+            new_txs.reverse()  # 오래된 거래부터 위에 오도록
+        new_tx_map[hid] = new_txs
 
         prev_regions[str(hid)] = {
             "name": cur["name"],
             "asks": cur["asks"],
             "auctions": cur["auctions"],
             "min_price": cur["min_price"],
+            "txs": (list(seen_txs or []) + [k for k in keys if k not in set(seen_txs or [])])[-TX_KEEP:],
         }
 
-    # 첫 실행이면 변동 알림 대신 일일 현황 1건만 보낸다
-    if not had_state:
-        changed = []
-
-    send_daily = force or not had_state or (
-        now.hour == 9 and state.get("last_daily") != today)
-
-    if changed:
-        send("\n\n".join(change_block(c, p) for c, p in changed))
-
-    if send_daily and results:
-        send(daily_message(results, today))
+    # 매 실행마다 전 구역 현황을 낸다. 변동 있는 구역만 골라 보내던 것을
+    # 그만둔 것이라, 변동 줄은 zone_block 안에서 있을 때만 얹힌다.
+    if results:
+        send(status_message(results, before, new_tx_map,
+                            now.strftime("%Y-%m-%d %H:%M")))
         state["last_daily"] = today
 
     state["regions"] = prev_regions
