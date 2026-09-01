@@ -430,10 +430,11 @@ def main():
             new_txs = []
         else:
             known = set(seen_txs)
+            # cur["txs"] 는 페이지 표 순서 그대로(최신 계약일이 위) 이므로
+            # 그대로 두면 최신이 위에 온다.
             new_txs = [t for t in cur["txs"]
                        if tx_key(t) not in known
                        and t["price"] is not None and t["price"] <= HIGHLIGHT_MAX]
-            new_txs.reverse()  # 오래된 거래부터 위에 오도록
         new_tx_map[hid] = new_txs
 
         prev_regions[str(hid)] = {
