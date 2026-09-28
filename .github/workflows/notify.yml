@@ -20,6 +20,9 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
+        with:
+          # 겹친 실행(맥 깨우개·예약)이 줄을 섰다 돌 때 옛 확인 기록으로 같은 알림을 또 보내지 않게 — 늘 main 최신을 받는다
+          ref: main
 
       - uses: actions/setup-python@v6
         with:
