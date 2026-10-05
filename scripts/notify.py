@@ -12,6 +12,7 @@ import os
 import re
 import sys
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
@@ -46,7 +47,12 @@ def fetch(url):
             })
             with urllib.request.urlopen(req, timeout=30) as resp:
                 return resp.read().decode("utf-8", "replace")
-        except Exception as exc:  # 네트워크/HTTP 오류 모두 재시도 대상
+        except urllib.error.HTTPError as exc:
+            # 403/429 = 막힘 — 다시 두드리면 더 길게 막힌다. 재시도 없이 바로 멈춘다(paracano 오답노트 #339)
+            if exc.code in (403, 429):
+                raise SystemExit("재개발닷컴 %d — 막힘, 이번 실행 멈춤" % exc.code)
+            last_err = exc
+        except Exception as exc:  # 네트워크 오류는 재시도 대상
             last_err = exc
             if attempt < 2:
                 time.sleep(2 * (attempt + 1))
