@@ -1,5 +1,5 @@
 {
-  "last_daily": "2026-10-12",
+  "last_daily": "2026-10-13",
   "regions": {
     "1188": {
       "asks": 29,
@@ -177,19 +177,19 @@
     },
     "4591": {
       "asks": 18,
-      "auctions": 0,
+      "auctions": 3,
       "min_price": "7.9억",
       "name": "신통기획 (가)송정동73-533"
     },
     "4592": {
       "asks": 5,
-      "auctions": 0,
+      "auctions": 1,
       "min_price": "5.2억",
       "name": "신통기획 구의동 32"
     },
     "4609": {
       "asks": 21,
-      "auctions": 1,
+      "auctions": 2,
       "min_price": "18억",
       "name": "모아타운 (가)서초3동2"
     },
@@ -249,7 +249,7 @@
     },
     "4877": {
       "asks": 2,
-      "auctions": 1,
+      "auctions": 2,
       "min_price": "6.5억",
       "name": "신통기획 (가)구의1동 221-1"
     },
@@ -291,7 +291,7 @@
     },
     "5327": {
       "asks": 5,
-      "auctions": 0,
+      "auctions": 1,
       "min_price": "3.9억",
       "name": "신통기획 (가)사당23"
     },
@@ -320,5 +320,5 @@
       "name": "신통기획 (가)오금동 70-1"
     }
   },
-  "updated_at": "2026-10-12 18:12:46 KST"
+  "updated_at": "2026-10-13 03:36:45 KST"
 }
